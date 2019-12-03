@@ -25,27 +25,24 @@ defmodule Day03 do
   def generate_points(commands) do
     {_, points} =
       commands
-      |> Enum.reduce({{0, 0}, []}, fn command, {heading, points} ->
-        new_points = expand(heading, command)
-        # A bit shit. Better to do this in a single pass
-        new_heading = hd(Enum.reverse(new_points))
-        {new_heading, Enum.concat(points, new_points)}
+      |> Enum.reduce({{0, 0}, MapSet.new()}, fn command, acc ->
+        {dir, dist} = parse_command(command)
+
+        for _i <- 1..dist, reduce: acc do
+          {{x, y}, mapset} ->
+            new_coord =
+              case dir do
+                "R" -> {x + 1, y}
+                "L" -> {x - 1, y}
+                "U" -> {x, y + 1}
+                "D" -> {x, y - 1}
+              end
+
+            {new_coord, MapSet.put(mapset, new_coord)}
+        end
       end)
 
     points
-  end
-
-  def expand({x, y}, command) do
-    {dir, dist} = parse_command(command)
-
-    for i <- 1..dist do
-      case dir do
-        "R" -> {x + i, y}
-        "L" -> {x - i, y}
-        "U" -> {x, y + i}
-        "D" -> {x, y - i}
-      end
-    end
   end
 
   def parse_command(<<dir::binary-size(1)>> <> rest) do
@@ -58,7 +55,6 @@ ExUnit.start()
 defmodule Test do
   use ExUnit.Case
 
-  @tag timeout: 200_000
   test "part1" do
     IO.inspect(Day03.run(File.read!("input1.txt")), label: "part1")
   end
