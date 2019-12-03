@@ -1,20 +1,39 @@
 defmodule Day02 do
   def run(input) when is_binary(input) do
-    input
-    |> String.split(",")
-    |> Enum.map(&String.to_integer/1)
-    |> run()
+    input |> parse |> interpret()
   end
 
   def run(input, noun, verb) do
-    [a, b, c | tl] =
-      input
-      |> String.split(",")
-      |> Enum.map(&String.to_integer/1)
+    input |> parse |> run_with_noun_verb(noun, verb)
+  end
 
+  def run_to_target(input, target) do
+    cmds = parse(input)
+
+    combos =
+      for noun <- 1..100,
+          verb <- 1..100,
+          do: {noun, verb}
+
+    result =
+      combos
+      |> Enum.reduce_while(nil, fn {noun, verb} = pair, acc ->
+        case run_with_noun_verb(cmds, noun, verb) do
+          ^target -> {:halt, pair}
+          _ -> {:cont, acc}
+        end
+      end)
+  end
+
+  def run_with_noun_verb([a, _b, _c | tl], noun, verb) do
     commands = [a, noun, verb] ++ tl
-
     interpret(commands, 0)
+  end
+
+  def parse(input) do
+    input
+    |> String.split(",")
+    |> Enum.map(&String.to_integer/1)
   end
 
   def interpret(acc) do
@@ -63,5 +82,12 @@ defmodule Test do
 
   test "part1" do
     IO.inspect(Day02.run(File.read!("input1.txt"), 12, 2), label: "part1")
+  end
+
+  test "part2" do
+    {noun, verb} = result = Day02.run_to_target(File.read!("input1.txt"), 19_690_720)
+
+    IO.inspect(result, label: "part2")
+    IO.inspect(100 * noun + verb, label: "part2")
   end
 end
