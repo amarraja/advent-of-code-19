@@ -4,6 +4,8 @@ defmodule Day03 do
       input
       |> String.split("\n")
       |> Enum.map(&points_for_line/1)
+      |> Enum.map(&Map.keys/1)
+      |> Enum.map(&MapSet.new/1)
 
     intersects = get_intersectings(a, b)
     manhattans = Enum.map(intersects, &manhattan/1)
@@ -23,13 +25,13 @@ defmodule Day03 do
   end
 
   def generate_points(commands) do
-    {_, points} =
+    {_heading, _steps, points} =
       commands
-      |> Enum.reduce({{0, 0}, MapSet.new()}, fn command, acc ->
+      |> Enum.reduce({{0, 0}, 0, %{}}, fn command, acc ->
         {dir, dist} = parse_command(command)
 
         for _i <- 1..dist, reduce: acc do
-          {{x, y}, mapset} ->
+          {{x, y}, steps, map} ->
             new_coord =
               case dir do
                 "R" -> {x + 1, y}
@@ -38,7 +40,7 @@ defmodule Day03 do
                 "D" -> {x, y - 1}
               end
 
-            {new_coord, MapSet.put(mapset, new_coord)}
+            {new_coord, steps + 1, Map.put(map, new_coord, steps)}
         end
       end)
 
