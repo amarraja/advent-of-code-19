@@ -12,6 +12,26 @@ defmodule Day03 do
     Enum.min(manhattans)
   end
 
+  def run2(input) do
+    [a, b] =
+      all =
+      input
+      |> String.split("\n")
+      |> Enum.map(&points_for_line/1)
+
+    [seta, setb] =
+      all
+      |> Enum.map(&Map.keys/1)
+      |> Enum.map(&MapSet.new/1)
+
+    intersects = get_intersectings(seta, setb)
+
+    distances =
+      intersects
+      |> Enum.map(fn point -> a[point] + b[point] end)
+      |> Enum.min()
+  end
+
   def manhattan({x, y}), do: abs(x) + abs(y)
 
   def get_intersectings(a, b) do
@@ -27,7 +47,7 @@ defmodule Day03 do
   def generate_points(commands) do
     {_heading, _steps, points} =
       commands
-      |> Enum.reduce({{0, 0}, 0, %{}}, fn command, acc ->
+      |> Enum.reduce({{0, 0}, 1, %{}}, fn command, acc ->
         {dir, dist} = parse_command(command)
 
         for _i <- 1..dist, reduce: acc do
@@ -59,6 +79,10 @@ defmodule Test do
 
   test "part1" do
     IO.inspect(Day03.run(File.read!("input1.txt")), label: "part1")
+  end
+
+  test "part2" do
+    IO.inspect(Day03.run2(File.read!("input1.txt")), label: "part2")
   end
 
   test "examples" do
