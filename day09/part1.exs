@@ -7,11 +7,7 @@ defmodule Day09 do
     program |> parse |> interpret([input])
   end
 
-  def interpret(acc, inputs) do
-    interpret(acc, 0, [], inputs)
-  end
-
-  def interpret(acc, pos, output, inputs) do
+  def interpret(acc, inputs, pos \\ 0, output \\ []) do
     [command_bits | rest] = Enum.drop(acc, pos)
     command_data = extract_command(command_bits)
 
@@ -27,27 +23,27 @@ defmodule Day09 do
           end
 
         new_app = List.update_at(acc, dest, fn _ -> result end)
-        interpret(new_app, pos + arity + 1, output, inputs)
+        interpret(new_app, inputs, pos + arity + 1, output)
 
       {:input, arity, _modes} ->
         [dest] = Enum.take(rest, arity)
         [input | inputs] = inputs
         new_app = List.update_at(acc, dest, fn _ -> input end)
-        interpret(new_app, pos + arity + 1, output, inputs)
+        interpret(new_app, inputs, pos + arity + 1, output)
 
       {:output, arity, modes} ->
         data = Enum.take(rest, arity)
         [result] = get_data_bits(data, modes, acc)
-        interpret(acc, pos + arity + 1, [result | output], inputs)
+        interpret(acc, inputs, pos + arity + 1, [result | output])
 
       {:jump_if_true, arity, modes} ->
         [input, new_pos] = Enum.take(rest, arity)
         [input, new_pos] = get_data_bits([input, new_pos], modes, acc)
 
         if input == 0 do
-          interpret(acc, pos + arity + 1, output, inputs)
+          interpret(acc, inputs, pos + arity + 1, output)
         else
-          interpret(acc, new_pos, output, inputs)
+          interpret(acc, inputs, new_pos, output)
         end
 
       {:jump_if_false, arity, modes} ->
@@ -55,9 +51,9 @@ defmodule Day09 do
         [input, new_pos] = get_data_bits([input, new_pos], modes, acc)
 
         if input == 0 do
-          interpret(acc, new_pos, output, inputs)
+          interpret(acc, inputs, new_pos, output)
         else
-          interpret(acc, pos + arity + 1, output, inputs)
+          interpret(acc, inputs, pos + arity + 1, output)
         end
 
       {:less_than, arity, modes} ->
@@ -66,7 +62,7 @@ defmodule Day09 do
 
         val = if a < b, do: 1, else: 0
         acc = List.update_at(acc, dst, fn _ -> val end)
-        interpret(acc, pos + arity + 1, output, inputs)
+        interpret(acc, inputs, pos + arity + 1, output)
 
       {:equals, arity, modes} ->
         [a, b, dst] = Enum.take(rest, arity)
@@ -74,7 +70,7 @@ defmodule Day09 do
 
         val = if a == b, do: 1, else: 0
         acc = List.update_at(acc, dst, fn _ -> val end)
-        interpret(acc, pos + arity + 1, output, inputs)
+        interpret(acc, inputs, pos + arity + 1, output)
 
       [99 | _] ->
         {hd(acc), output}
