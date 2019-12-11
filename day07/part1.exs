@@ -3,19 +3,15 @@ defmodule Day07 do
     input |> String.split(",") |> Enum.map(&String.to_integer/1)
   end
 
-  def run(input, id) when is_binary(input) do
-    input |> parse |> interpret(id)
+  def run(program, input) when is_binary(program) do
+    program |> parse |> interpret([input])
   end
 
-  def run_with_noun_verb([a, _b, _c | tl], noun, verb, id) do
-    interpret([a, noun, verb | tl], 0, [], id)
+  def interpret(acc, inputs) do
+    interpret(acc, 0, [], inputs)
   end
 
-  def interpret(acc, id) do
-    interpret(acc, 0, [], id)
-  end
-
-  def interpret(acc, pos, output, id) do
+  def interpret(acc, pos, output, inputs) do
     [command_bits | rest] = Enum.drop(acc, pos)
     command_data = extract_command(command_bits)
 
@@ -31,26 +27,27 @@ defmodule Day07 do
           end
 
         new_app = List.update_at(acc, dest, fn _ -> result end)
-        interpret(new_app, pos + arity + 1, output, id)
+        interpret(new_app, pos + arity + 1, output, inputs)
 
       {:input, arity, _modes} ->
         [dest] = Enum.take(rest, arity)
-        new_app = List.update_at(acc, dest, fn _ -> id end)
-        interpret(new_app, pos + arity + 1, output, id)
+        [input | inputs] = inputs
+        new_app = List.update_at(acc, dest, fn _ -> input end)
+        interpret(new_app, pos + arity + 1, output, inputs)
 
       {:output, arity, modes} ->
         data = Enum.take(rest, arity)
         [result] = get_data_bits(data, modes, acc)
-        interpret(acc, pos + arity + 1, [result | output], id)
+        interpret(acc, pos + arity + 1, [result | output], inputs)
 
       {:jump_if_true, arity, modes} ->
         [input, new_pos] = Enum.take(rest, arity)
         [input, new_pos] = get_data_bits([input, new_pos], modes, acc)
 
         if input == 0 do
-          interpret(acc, pos + arity + 1, output, id)
+          interpret(acc, pos + arity + 1, output, inputs)
         else
-          interpret(acc, new_pos, output, id)
+          interpret(acc, new_pos, output, inputs)
         end
 
       {:jump_if_false, arity, modes} ->
@@ -58,9 +55,9 @@ defmodule Day07 do
         [input, new_pos] = get_data_bits([input, new_pos], modes, acc)
 
         if input == 0 do
-          interpret(acc, new_pos, output, id)
+          interpret(acc, new_pos, output, inputs)
         else
-          interpret(acc, pos + arity + 1, output, id)
+          interpret(acc, pos + arity + 1, output, inputs)
         end
 
       {:less_than, arity, modes} ->
@@ -69,7 +66,7 @@ defmodule Day07 do
 
         val = if a < b, do: 1, else: 0
         acc = List.update_at(acc, dst, fn _ -> val end)
-        interpret(acc, pos + arity + 1, output, id)
+        interpret(acc, pos + arity + 1, output, inputs)
 
       {:equals, arity, modes} ->
         [a, b, dst] = Enum.take(rest, arity)
@@ -77,7 +74,7 @@ defmodule Day07 do
 
         val = if a == b, do: 1, else: 0
         acc = List.update_at(acc, dst, fn _ -> val end)
-        interpret(acc, pos + arity + 1, output, id)
+        interpret(acc, pos + arity + 1, output, inputs)
 
       [99 | _] ->
         {hd(acc), output}
