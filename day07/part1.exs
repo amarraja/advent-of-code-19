@@ -3,8 +3,30 @@ defmodule Day07 do
     input |> String.split(",") |> Enum.map(&String.to_integer/1)
   end
 
-  def run(program, input) when is_binary(program) do
-    program |> parse |> interpret([input])
+  def find_highest_signal(program) do
+    program = parse(program)
+
+    range = 0..4
+
+    combos =
+      for a <- range,
+          b <- range,
+          c <- range,
+          d <- range,
+          e <- range,
+          length(Enum.uniq([a, b, c, d, e])) == 5,
+          do: [a, b, c, d, e]
+
+    combos
+    |> Enum.map(&get_thruster_signal(program, &1))
+    |> Enum.max()
+  end
+
+  def get_thruster_signal(program, phase_settings) do
+    Enum.reduce(phase_settings, 0, fn phase_setting, last_output ->
+      {_, [out | _]} = interpret(program, [phase_setting, last_output])
+      out
+    end)
   end
 
   def interpret(acc, inputs) do
@@ -140,5 +162,23 @@ defmodule Test do
   use ExUnit.Case
 
   test "first examples" do
+    program = Day07.parse("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0")
+    assert Day07.get_thruster_signal(program, [4, 3, 2, 1, 0]) == 43210
+
+    program =
+      Day07.parse("3,23,3,24,1002,24,10,24,1002,23,-1,23,101,5,23,23,1,24,23,23,4,23,99,0,0")
+
+    assert Day07.get_thruster_signal(program, [0, 1, 2, 3, 4]) == 54321
+
+    program =
+      Day07.parse(
+        "3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0"
+      )
+
+    assert Day07.get_thruster_signal(program, [1, 0, 4, 3, 2]) == 65210
+  end
+
+  test "part1" do
+    IO.inspect(Day07.find_highest_signal(File.read!("input1.txt")), label: "part1")
   end
 end
