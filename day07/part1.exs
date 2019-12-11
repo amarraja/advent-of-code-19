@@ -140,40 +140,5 @@ defmodule Test do
   use ExUnit.Case
 
   test "first examples" do
-    assert {3500, []} = Day07.run("1,9,10,3,2,3,11,0,99,30,40,50", 1)
-    assert {2, []} = Day07.run("1,0,0,0,99", 1)
-  end
-
-  test "commands" do
-    assert {:mul, 3, []} = Day07.extract_command(2)
-    assert {:mul, 3, [:immediate]} = Day07.extract_command(102)
-    assert {:mul, 3, [:positional, :immediate]} = Day07.extract_command(1002)
-  end
-
-  test "part1" do
-    {_, output} = Day07.run(File.read!("input1.txt"), 1)
-    IO.inspect(output, label: "part1")
-    IO.inspect(hd(output), label: "part1")
-  end
-
-  test "part2 examples" do
-    program = """
-    3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
-    1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
-    999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99
-    """
-
-    program = program |> String.replace("\n", "") |> String.trim()
-
-    assert {_, [999]} = Day07.run(program, 7)
-    assert {_, [1000]} = Day07.run(program, 8)
-    assert {_, [1001]} = Day07.run(program, 9)
-  end
-
-  test "part2" do
-    {_, output} = Day07.run(File.read!("input1.txt"), 5)
-
-    IO.inspect(output, label: "part2")
-    IO.inspect(hd(output), label: "part2")
   end
 end
