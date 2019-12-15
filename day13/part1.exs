@@ -13,7 +13,15 @@ defmodule Day13 do
     out
   end
 
-  def interpret(acc, inputs, pos \\ 0, output \\ [], base \\ 0) do
+  def count_blocks(program) do
+    {:halt, [_, output | _]} = program |> parse |> interpret()
+
+    output
+    |> Enum.chunk_every(3)
+    |> Enum.count(fn [_, _, block_type] -> block_type == 2 end)
+  end
+
+  def interpret(acc, inputs \\ [], pos \\ 0, output \\ [], base \\ 0) do
     [command_bits | rest] = Enum.drop(acc, pos)
     command_data = extract_command(command_bits)
 
@@ -221,5 +229,9 @@ defmodule Test do
 
     [_, [num] | _] = Day13.run("104,1125899906842624,99")
     assert num == 1_125_899_906_842_624
+  end
+
+  test "day 13 part 1" do
+    IO.inspect(Day13.count_blocks(File.read!("input.txt")), label: "part1")
   end
 end
