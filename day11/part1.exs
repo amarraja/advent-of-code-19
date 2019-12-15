@@ -18,6 +18,33 @@ defmodule Day11 do
     Enum.count(panels)
   end
 
+  def part2(program) do
+    panels = do_paint(parse(program), {{0, 0}, :up}, 0, 0, %{{0, 0} => 1})
+
+    {{x_min, _}, _} = Enum.min_by(panels, fn {x, _y} -> x end)
+    {{x_max, _}, _} = Enum.max_by(panels, fn {x, _y} -> x end)
+
+    {{_, y_min}, _} = Enum.min_by(panels, fn {_x, y} -> y end)
+    {{_, y_max}, _} = Enum.max_by(panels, fn {_x, y} -> y end)
+
+    IO.puts("\npart2:\n\n")
+
+    for y <- y_min..(y_max - 1) do
+      for x <- x_min..x_max do
+        IO.write(
+          case panels[{x, y}] do
+            1 -> "#"
+            _ -> " "
+          end
+        )
+      end
+
+      IO.puts("")
+    end
+
+    IO.puts("\n")
+  end
+
   def do_paint(program, {coords, _} = robot, pos, base, panels) do
     inputs = [panels[coords] || 0]
 
@@ -264,5 +291,9 @@ defmodule Test do
 
   test "day11 part 1" do
     IO.inspect(Day11.part1(File.read!("input.txt")), label: "part1")
+  end
+
+  test "day11 part 2" do
+    Day11.part2(File.read!("input.txt"))
   end
 end
