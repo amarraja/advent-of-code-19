@@ -1,15 +1,56 @@
-defmodule Day09 do
+defmodule Day11 do
   def parse(input) do
     input |> String.split(",") |> Enum.map(&String.to_integer/1)
   end
 
   def run(program) when is_binary(program) do
-    program |> parse |> interpret([])
+    {:halt, out} = program |> parse |> interpret([])
+    out
   end
 
   def run(program, input) when is_binary(program) do
-    program |> parse |> interpret([input])
+    {:halt, out} = program |> parse |> interpret([input])
+    out
   end
+
+  def part1(program) do
+    panels = do_paint(parse(program), {{0, 0}, :up}, 0, 0, %{})
+    Enum.count(panels)
+  end
+
+  def do_paint(program, {coords, _} = robot, pos, base, panels) do
+    inputs = [panels[coords] || 0]
+
+    case interpret(program, inputs, pos, [], base) do
+      {:paused, [_, [colour, dir], program, pos, base]} ->
+        panels = Map.put(panels, coords, colour)
+        do_paint(program, move(dir, robot), pos, base, panels)
+
+      {:halt, _} ->
+        panels
+    end
+  end
+
+  def move(dir, {coords, heading}) do
+    new_heading = turn(dir, heading)
+    new_coords = forward(coords, new_heading)
+    {new_coords, new_heading}
+  end
+
+  def turn(0, :up), do: :left
+  def turn(0, :left), do: :down
+  def turn(0, :down), do: :right
+  def turn(0, :right), do: :up
+
+  def turn(1, :up), do: :right
+  def turn(1, :right), do: :down
+  def turn(1, :down), do: :left
+  def turn(1, :left), do: :up
+
+  def forward({x, y}, :up), do: {x, y + 1}
+  def forward({x, y}, :right), do: {x + 1, y}
+  def forward({x, y}, :down), do: {x, y - 1}
+  def forward({x, y}, :left), do: {x - 1, y}
 
   def interpret(acc, inputs, pos \\ 0, output \\ [], base \\ 0) do
     [command_bits | rest] = Enum.drop(acc, pos)
@@ -32,12 +73,18 @@ defmodule Day09 do
         interpret(new_app, inputs, pos + arity + 1, output, base)
 
       {:input, arity, modes} ->
-        [dest] = Enum.take(rest, arity)
-        dest = get_output_register(base, dest, modes)
-        [input | inputs] = inputs
-        acc = expand_memory(acc, dest)
-        new_app = List.update_at(acc, dest, fn _ -> input end)
-        interpret(new_app, inputs, pos + arity + 1, output, base)
+        case inputs do
+          [] ->
+            {:paused, [hd(acc), Enum.reverse(output), acc, pos, base]}
+
+          _ ->
+            [dest] = Enum.take(rest, arity)
+            dest = get_output_register(base, dest, modes)
+            [input | inputs] = inputs
+            acc = expand_memory(acc, dest)
+            new_app = List.update_at(acc, dest, fn _ -> input end)
+            interpret(new_app, inputs, pos + arity + 1, output, base)
+        end
 
       {:output, arity, modes} ->
         data = Enum.take(rest, arity)
@@ -90,7 +137,7 @@ defmodule Day09 do
         interpret(acc, inputs, pos + arity + 1, output, base + new_base)
 
       [99 | _] ->
-        {hd(acc), Enum.reverse(output)}
+        {:halt, [hd(acc), Enum.reverse(output), acc, pos, base]}
 
       seq ->
         raise "Unknown command sequence: pos: #{pos}, output: #{output}, #{inspect(seq)}"
@@ -180,14 +227,14 @@ defmodule Test do
   use ExUnit.Case
 
   test "day5 first examples" do
-    assert {3500, []} = Day09.run("1,9,10,3,2,3,11,0,99,30,40,50", 1)
-    assert {2, []} = Day09.run("1,0,0,0,99", 1)
+    assert [3500 | _] = Day11.run("1,9,10,3,2,3,11,0,99,30,40,50", 1)
+    assert [2 | _] = Day11.run("1,0,0,0,99", 1)
   end
 
   test "commands" do
-    assert {:mul, 3, []} = Day09.extract_command(2)
-    assert {:mul, 3, [:immediate]} = Day09.extract_command(102)
-    assert {:mul, 3, [:positional, :immediate]} = Day09.extract_command(1002)
+    assert {:mul, 3, []} = Day11.extract_command(2)
+    assert {:mul, 3, [:immediate]} = Day11.extract_command(102)
+    assert {:mul, 3, [:positional, :immediate]} = Day11.extract_command(1002)
   end
 
   test "day 5 part2 examples" do
@@ -199,19 +246,23 @@ defmodule Test do
 
     program = program |> String.replace("\n", "") |> String.trim()
 
-    assert {_, [999]} = Day09.run(program, 7)
-    assert {_, [1000]} = Day09.run(program, 8)
-    assert {_, [1001]} = Day09.run(program, 9)
+    assert [_, [999] | _] = Day11.run(program, 7)
+    assert [_, [1000] | _] = Day11.run(program, 8)
+    assert [_, [1001] | _] = Day11.run(program, 9)
   end
 
   test "day9 part 1 examples" do
-    {_, output} = Day09.run("109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99")
+    [_, output | _] = Day11.run("109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99")
     assert output == [109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99]
 
-    {_, [num]} = Day09.run("1102,34915192,34915192,7,4,7,99,0")
+    [_, [num] | _] = Day11.run("1102,34915192,34915192,7,4,7,99,0")
     assert length(Integer.digits(num)) == 16
 
-    {_, [num]} = Day09.run("104,1125899906842624,99")
+    [_, [num] | _] = Day11.run("104,1125899906842624,99")
     assert num == 1_125_899_906_842_624
+  end
+
+  test "day11 part 1" do
+    IO.inspect(Day11.part1(File.read!("input.txt")), label: "part1")
   end
 end
