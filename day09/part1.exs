@@ -218,4 +218,8 @@ defmodule Test do
   test "day9 part1" do
     IO.inspect(Day09.run(File.read!("input.txt"), 1), label: "part1")
   end
+
+  test "day9 part2" do
+    IO.inspect(Day09.run(File.read!("input.txt"), 2), label: "part2")
+  end
 end
